@@ -12,9 +12,13 @@ if os.name == 'nt':
 else:
   SHELL = 'sh'
 
+def get_secret(key):
+    with open("/var/openfaas/secrets/{}".format(key)) as f:
+        return f.read().strip()
+
 MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT')
-MINIO_ACCESS_KEY = os.getenv('MINIO_ACCESS_KEY')
-MINIO_SECRET_KEY = os.getenv('MINIO_SECRET_KEY')
+MINIO_ACCESS_KEY = get_secret("minio-access-key")
+MINIO_SECRET_KEY = get_secret("minio-secret-key")
 BUCKET_NAME = os.getenv('BUCKET_NAME')
 
 minio_client = Minio(

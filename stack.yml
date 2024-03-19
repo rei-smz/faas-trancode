@@ -11,7 +11,8 @@ functions:
       ADDITIONAL_PACKAGE: "ffmpeg"
     environment:
       MINIO_ENDPOINT: "your_minio_s3_addr"
-      MINIO_ACCESS_KEY: "your_minio_access_key"
-      MINIO_SECRET_KEY: "your_minio_secret_key"
       BUCKET_NAME: "your_bkt_name"
+    secrets:
+      - minio-access-key
+      - minio-secret-key
 
