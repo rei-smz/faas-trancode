@@ -1,20 +1,21 @@
 import asyncio
 import logging
 import os
+import shutil
 import time
 import json
 from tempfile import NamedTemporaryFile
 from minio import Minio
 from minio.error import S3Error
 
+def get_secret(key):
+    with open("/var/openfaas/secrets/{}".format(key)) as f:
+        return f.read().strip()
+
 if os.name == 'nt':
   SHELL = 'pwsh'
 else:
   SHELL = 'sh'
-
-def get_secret(key):
-    with open("/var/openfaas/secrets/{}".format(key)) as f:
-        return f.read().strip()
 
 MINIO_ENDPOINT = os.getenv('MINIO_ENDPOINT')
 MINIO_ACCESS_KEY = get_secret("minio-access-key")
@@ -72,35 +73,37 @@ def handle(event, context):
     obj_name = body.get('object')
     args = body.get('args', {})
     video_format = args.get('format', 'mp4')
+    current_time = time.strftime("%Y-%m-%d-%H%M%S", time.localtime())
 
     if not path:
         return {"statusCode": 400, "body": "Path is required"}
 
     # get video
     input_tmp = obj_name
+    tmp_path = path + "-" + current_time
+    os.mkdir(tmp_path)
     try:
-        minio_client.fget_object(BUCKET_NAME, path + '/' + obj_name, input_tmp)
+        minio_client.fget_object(BUCKET_NAME, path + '/' + obj_name, tmp_path + '/' + input_tmp)
     except S3Error as e:
         logging.error(f"MinIO Error: {e}")
         return {"statusCode": 500, "body": f"Error downloading file: {e}"}
     
     # run trancoding
     output_tmp = "out." + video_format
-    result = asyncio.run(run_ffmpeg(args, input_tmp, output_tmp))
-    if "Fail" in result:
-        os.remove(input_tmp)
+    result = asyncio.run(run_ffmpeg(args, tmp_path + '/' + input_tmp, tmp_path + '/' + output_tmp))
+    logging.info(f"result: {result}")
+    if result is None or "Fail" in result:
+        shutil.rmtree(tmp_path)
         return {"statusCode": 500, "body": result}
 
     # upload result
     try:
-        minio_client.fput_object(BUCKET_NAME, path + '/' + output_tmp, output_tmp)
+        minio_client.fput_object(BUCKET_NAME, path + '/' + output_tmp, tmp_path + '/' + output_tmp)
     except S3Error as e:
         logging.error(f"MinIO Error: {e}")
-        os.remove(input_tmp)
-        os.remove(output_tmp)
+        shutil.rmtree(tmp_path)
         return {"statusCode": 500, "body": f"Error uploading file: {e}"}
 
-    os.remove(input_tmp)
-    os.remove(output_tmp)
+    shutil.rmtree(tmp_path)
 
     return {"statusCode": 200, "body": "success"}

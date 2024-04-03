@@ -1,18 +1,29 @@
 version: 1.0
 provider:
   name: openfaas
-  gateway: http://127.0.0.1:31112
+  gateway: http://128.110.217.187:31112
 functions:
   video-transcode:
     lang: python3-http-debian
     handler: ./video-transcode
-    image: your_username/video-transcode:latest
+    image: lzlzq/video-transcode:latest
     build-args:
-      ADDITIONAL_PACKAGE: "ffmpeg"
+      ADDITIONAL_PACKAGE: ffmpeg
+    # build_options:
+    #   - name: transcode
+    #     packages:
+    #       - ffmpeg
     environment:
-      MINIO_ENDPOINT: "your_minio_s3_addr"
-      BUCKET_NAME: "your_bkt_name"
+      MINIO_ENDPOINT: "s3.128.110.217.187.nip.io:31800"
+      BUCKET_NAME: "openwhisk-bkt"
+      exec_timeout: "30m"
+      read_timeout: "30m"
+      write_timeout: "30m"
     secrets:
       - minio-access-key
       - minio-secret-key
-
+    requests:
+      cpu: 11000m
+    limits:
+      cpu: 16000m
+      
