@@ -44,7 +44,7 @@ async def run_ffmpeg(args,
     codec += ' -acodec ' + acodec
   if vcodec != '':
     codec += ' -vcodec ' + vcodec
-  cmd = f'ffmpeg -hide_banner -f mp4 -loglevel warning -y -i {tmp_in} {resolution_cmd} {codec} {tmp_out}'
+  cmd = f'ffmpeg -hide_banner -loglevel warning -y -i {tmp_in} {resolution_cmd} {codec} {tmp_out}'
   full_cmd = f'{SHELL} -c "{cmd}"'
   ts = time.time()
   logging.debug(f'full_cmd = {full_cmd}')
