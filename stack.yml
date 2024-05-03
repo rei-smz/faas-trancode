@@ -14,8 +14,8 @@ functions:
     #     packages:
     #       - ffmpeg
     environment:
-      MINIO_ENDPOINT: "s3.128.110.217.187.nip.io:31800"
-      BUCKET_NAME: "openwhisk-bkt"
+      MINIO_ENDPOINT: "s3.128.110.217.187.nip.io:31999"
+      BUCKET_NAME: "faas-bkt"
       exec_timeout: "30m"
       read_timeout: "30m"
       write_timeout: "30m"

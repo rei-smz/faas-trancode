@@ -1,1 +1,3 @@
 minio
+parsl
+pyopenssl==24.0.0
