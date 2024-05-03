@@ -51,6 +51,7 @@ WORKDIR /home/app/
 USER app
 
 # Set up of-watchdog for HTTP mode
+ENV PYTHONPATH="${PYTHONPATH}:/home/app/function"
 ENV fprocess="python index.py"
 ENV cgi_headers="true"
 ENV mode="http"
