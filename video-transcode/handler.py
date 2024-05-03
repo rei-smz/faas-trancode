@@ -96,7 +96,7 @@ def handle(event, context):
         output_local_path = os.path.join(tmp_path, "output." + video_format)
         transcoding_future = run_ffmpeg(inputs=[remote_video, args], 
                                         outputs=[File(output_local_path)])
-        print(transcoding_future.result())
+        # print(transcoding_future.result())
         if transcoding_future.result() == 0:
             res_upload = upload_video(os.path.join(path, "output." + video_format), output_local_path)
             if "Error" in res_upload:
