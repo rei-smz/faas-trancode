@@ -65,45 +65,46 @@ def handle(event, context):
       }
     
     transcode_config_local = Config(
-    executors=[
-        HighThroughputExecutor(
-            label="htex_Local",
-            worker_debug=True,
-            # cores_per_worker=1,
-            # storage_access=[HTTPInTaskStaging()],
-            provider=LocalProvider(
-                channel=LocalChannel(),
-                init_blocks=1,
-                max_blocks=10,
-            ),
-        )
-    ],
-    strategy=None,
-)
+        executors=[
+            HighThroughputExecutor(
+                label="htex_Local",
+                worker_debug=True,
+                # cores_per_worker=1,
+                # storage_access=[HTTPInTaskStaging()],
+                provider=LocalProvider(
+                    channel=LocalChannel(),
+                    init_blocks=1,
+                    max_blocks=10,
+                ),
+            )
+        ],
+        strategy=None,
+    )
 
-    with parsl.load(transcode_config_local):
-        body = json.loads(event.body.decode('utf-8'))
-        
-        path = body.get('path')
-        obj_name = body.get('object')
-        args = body.get('args', {})
-        video_format = args.get('format', 'mp4')
-        current_time = time.strftime("%Y-%m-%d-%H%M%S", time.localtime())
-        remote_video = File(os.path.join("http://" + MINIO_ENDPOINT, BUCKET_NAME, path, obj_name))
-        # remote_video = File('https://github.com/Parsl/parsl/blob/master/README.rst')
-        tmp_path = path + "-" + current_time
-        os.mkdir(tmp_path)
-        output_local_path = os.path.join(tmp_path, "output." + video_format)
-        transcoding_future = run_ffmpeg(inputs=[remote_video, args], 
-                                        outputs=[File(output_local_path)])
-        # print(transcoding_future.result())
-        if transcoding_future.result() == 0:
-            res_upload = upload_video(os.path.join(path, "output." + video_format), output_local_path)
-            if "Error" in res_upload:
-                shutil.rmtree(tmp_path)
-                return {"statusCode": 500, "body": res_upload}
-        else:
+    if not parsl.dataflow.dflow.DataFlowKernelLoader._dfk:
+        parsl.load(transcode_config_local):
+    body = json.loads(event.body.decode('utf-8'))
+    
+    path = body.get('path')
+    obj_name = body.get('object')
+    args = body.get('args', {})
+    video_format = args.get('format', 'mp4')
+    current_time = time.strftime("%Y-%m-%d-%H%M%S", time.localtime())
+    remote_video = File(os.path.join("http://" + MINIO_ENDPOINT, BUCKET_NAME, path, obj_name))
+    # remote_video = File('https://github.com/Parsl/parsl/blob/master/README.rst')
+    tmp_path = path + "-" + current_time
+    os.mkdir(tmp_path)
+    output_local_path = os.path.join(tmp_path, "output." + video_format)
+    transcoding_future = run_ffmpeg(inputs=[remote_video, args], 
+                                    outputs=[File(output_local_path)])
+    # print(transcoding_future.result())
+    if transcoding_future.result() == 0:
+        res_upload = upload_video(os.path.join(path, "output." + video_format), output_local_path)
+        if "Error" in res_upload:
             shutil.rmtree(tmp_path)
-            return {"statusCode": 500, "body": f"Transcoding function exit with err code: {transcoding_future.result()}"}
+            return {"statusCode": 500, "body": res_upload}
+    else:
         shutil.rmtree(tmp_path)
-        return {"statusCode": 200, "body": "success"}
+        return {"statusCode": 500, "body": f"Transcoding function exit with err code: {transcoding_future.result()}"}
+    shutil.rmtree(tmp_path)
+    return {"statusCode": 200, "body": "success"}
