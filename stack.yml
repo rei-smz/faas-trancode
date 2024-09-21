@@ -15,7 +15,7 @@ functions:
     #       - ffmpeg
     environment:
       MINIO_ENDPOINT: "s3endpoint"
-      BUCKET_NAME: "openwhisk-bkt"
+      BUCKET_NAME: "faas-bkt"
       exec_timeout: "30m"
       read_timeout: "30m"
       write_timeout: "30m"
