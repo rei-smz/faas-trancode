@@ -73,24 +73,24 @@ def handle(event, context):
     obj_name = body.get('object')
     args = body.get('args', {})
     video_format = args.get('format', 'mp4')
-    current_time = time.strftime("%Y-%m-%d-%H%M%S", time.localtime())
+    current_time = str(time.time_ns())
 
     if not path:
         return {"statusCode": 400, "body": "Path is required"}
 
     # get video
-    input_tmp = obj_name
-    tmp_path = path + "-" + current_time
+    # tmp_path = path + "-" + current_time
+    tmp_path = current_time + '-' + path.split('/')[-1]
     os.mkdir(tmp_path)
     try:
-        minio_client.fget_object(BUCKET_NAME, path + '/' + obj_name, tmp_path + '/' + input_tmp)
+        minio_client.fget_object(BUCKET_NAME, path + '/' + obj_name, tmp_path + '/' + obj_name)
     except S3Error as e:
         logging.error(f"MinIO Error: {e}")
         return {"statusCode": 500, "body": f"Error downloading file: {e}"}
     
     # run trancoding
     output_tmp = "out." + video_format
-    result = asyncio.run(run_ffmpeg(args, tmp_path + '/' + input_tmp, tmp_path + '/' + output_tmp))
+    result = asyncio.run(run_ffmpeg(args, tmp_path + '/' + obj_name, tmp_path + '/' + output_tmp))
     logging.info(f"result: {result}")
     if result is None or "Fail" in result:
         shutil.rmtree(tmp_path)
